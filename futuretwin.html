@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FutureTwin AI</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f7fb;--card:#fff;--tx:#161a2b;--mu:#66708a;--ac:#4f46e5;--ok:#16a34a;--wn:#d97706;--bd:#dc2626;--ln:#e3e6ef}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1120;--card:#171b30;--tx:#eceffa;--mu:#98a1bd;--ac:#8b85ff;--ok:#4ade80;--wn:#fbbf24;--bd:#f87171;--ln:#2a3050}}
+:root[data-theme="dark"]{--bg:#0e1120;--card:#171b30;--tx:#eceffa;--mu:#98a1bd;--ac:#8b85ff;--ok:#4ade80;--wn:#fbbf24;--bd:#f87171;--ln:#2a3050}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45}
+.w{max-width:960px;margin:0 auto;padding:16px}
+h1{font-size:24px;margin:8px 0 2px}h2{font-size:15px;margin:0 0 10px}.mu{color:var(--mu);font-size:13px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-top:12px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tab{border:1px solid var(--ln);background:var(--card);color:var(--tx);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:13px}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){.g{grid-template-columns:1fr}}
+.sl{margin:10px 0}.sl label{display:flex;justify-content:space-between;font-size:13px}.sl input{width:100%;accent-color:var(--ac)}
+button.pr{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;margin-right:6px}
+button.sc{background:transparent;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px 14px;cursor:pointer}
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tri div{border:1px solid var(--ln);border-radius:10px;padding:8px;text-align:center}
+.tri b{display:block;font-size:20px}
+.v{display:inline-block;padding:6px 12px;border-radius:8px;font-weight:700;color:#fff}
+.bar{height:10px;border-radius:5px;background:var(--ac);min-width:2px}.row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}.row span:first-child{width:110px}
+.hist{display:flex;align-items:flex-end;gap:2px;height:70px}.hist i{flex:1;background:var(--ac);opacity:.7;border-radius:2px 2px 0 0}
+.ov{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--ln);text-align:left;white-space:nowrap}
+</style></head><body><div class="w">
+<h1>🔮 FutureTwin AI</h1>
+<div class="mu">Test the Experiment Before It Touches Reality. Ek platform, alag-alag fields. Yeh decision-support tool hai, real testing ya doctor/engineer ka replacement nahi.</div>
+<div class="tabs" id="tabs"></div>
+<div class="g">
+ <div class="card"><h2 id="dt"></h2><div class="mu" id="dd"></div><div id="sliders"></div>
+  <button class="pr" onclick="run()">▶ Simulate (500 runs)</button><button class="sc" onclick="save()">＋ Save scenario</button></div>
+ <div class="card" id="out"><h2>Result</h2><div class="mu">Sliders set karo aur Simulate dabao.</div></div>
+</div>
+<div class="card"><h2>Scenario comparison & timeline</h2><div class="ov" id="hist"><div class="mu">Abhi koi saved scenario nahi. Simulate karke "Save scenario" dabao.</div></div></div>
+<div class="mu" style="margin:14px 0">Note: yeh demo simple simulation models use karta hai (illustrative). Real use ke liye real data aur expert validation zaroori hai. Defense field mein sirf safety/protection analysis, weapon design nahi.</div>
+</div>
+<script>
+const D={
+med:{n:"💊 Medical: Drug dose",t:"Virtual drug trial",d:"Virtual patients par dose aur timing ka asar.",u:["Effect","Side-effect risk"],
+ p:[["Dose","mg",5,40,15],["Gap between doses","hrs",4,24,12],["Avg patient age","yrs",18,85,45]],
+ f(p,n){const daily=p[0]*24/p[1];const tm=.7+.3*Math.exp(-Math.pow((p[1]-12)/8,2));
+  const b=100*(1-Math.exp(-daily/(20*n)))*tm;const r=100/(1+Math.exp(-(daily*n-48)/7))*(1+(p[2]-45)/160);return[b,Math.min(100,r)]}},
+inf:{n:"🏗️ Engineering / Safety",t:"Structure & equipment stress test",d:"Bridge, machine ya safety equipment load par kab fail hoga.",u:["Performance","Failure risk"],
+ p:[["Load","%",30,150,80],["Material strength","units",40,150,100],["Age","yrs",0,50,10]],
+ f(p,n){const cap=p[1]*(1-p[2]/120)*n;const ratio=p[0]/cap;const r=100/(1+Math.exp(-(ratio-.95)*12));
+  return[Math.min(100,p[0]*.9),Math.min(100,r)]}},
+dis:{n:"🌊 Disaster / Epidemic",t:"Outbreak / disaster response",d:"Virus ya disaster mein hospital aur logon par asar.",u:["Protection","Hospital overload risk"],
+ p:[["Spread rate (R0)","",1,4,2.2],["Vaccinated / protected","%",0,90,30],["Distancing / evacuation","%",0,80,20]],
+ f(p,n){const eff=p[0]*n*(1-p[1]/100)*(1-p[2]/130);const r=100/(1+Math.exp(-(eff-1.1)*3));
+  return[Math.min(100,p[1]*.6+p[2]*.5),r]}},
+biz:{n:"📈 Business",t:"Business what-if",d:"Demand, cost aur supply delay ka profit par asar.",u:["Profit index","Loss risk"],
+ p:[["Demand change","%",-30,50,10],["Cost change","%",-20,40,5],["Supply delay","days",0,30,3]],
+ f(p,n){const rev=(100+p[0]*n)*(1-p[2]*.012);const cost=60*(1+p[1]/100);const prof=rev-cost;
+  return[Math.max(0,Math.min(100,prof*1.5)),100/(1+Math.exp((prof-20)/6))]}}
+};
+let cur="med",vals={},hist=[],last=null;
+const $=id=>document.getElementById(id);
+function tabs(){$("tabs").innerHTML=Object.keys(D).map(k=>`<button class="tab ${k==cur?"on":""}" onclick="sel('${k}')">${D[k].n}</button>`).join("")}
+function sel(k){cur=k;vals=D[k].p.map(x=>x[4]);last=null;tabs();draw();$("out").innerHTML='<h2>Result</h2><div class="mu">Sliders set karo aur Simulate dabao.</div>'}
+function draw(){const m=D[cur];$("dt").textContent=m.t;$("dd").textContent=m.d;
+ $("sliders").innerHTML=m.p.map((x,i)=>`<div class="sl"><label><span>${x[0]}</span><b id="v${i}">${vals[i]} ${x[1]}</b></label><input type="range" min="${x[2]}" max="${x[3]}" step="${(x[3]-x[2])/100}" value="${vals[i]}" oninput="vals[${i}]=+(+this.value).toFixed(2);$('v${i}').textContent=vals[${i}]+' ${x[1]}'"></div>`).join("")}
+function gauss(){let u=0,v=0;while(!u)u=Math.random();v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+const sc=(b,r)=>b-1.3*r;
+function q(a,x){return a[Math.floor((a.length-1)*x)]}
+function sim(p){const m=D[cur],R=[];for(let i=0;i<500;i++){const n=Math.exp(.15*gauss());const[b,r]=m.f(p,n);R.push({b,r,s:sc(b,r)})}
+ R.sort((a,c)=>a.s-c.s);const med=arr=>arr.reduce((t,x)=>t+x,0)/arr.length;
+ return{worst:R[50],likely:R[250],best:R[449],risk:med(R.map(x=>x.r)),ben:med(R.map(x=>x.b)),R}}
+function run(){const m=D[cur],p=vals.slice(),S=sim(p);
+ const tot=(m.f(p,1)); const base=sc(tot[0],tot[1]);
+ const sens=m.p.map((x,i)=>{const hi=p.slice(),lo=p.slice();const span=(x[3]-x[2])*.15;hi[i]=Math.min(x[3],p[i]+span);lo[i]=Math.max(x[2],p[i]-span);
+  const a=m.f(hi,1),b=m.f(lo,1);return{n:x[0],d:sc(a[0],a[1])-sc(b[0],b[1])}}).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+ const mx=Math.max(...sens.map(s=>Math.abs(s.d)),1);
+ const verdict=S.risk<15&&S.ben>55?["GO ✅","var(--ok)"]:S.risk>35?["NO-GO ⛔","var(--bd)"]:["REVISE ⚠️","var(--wn)"];
+ const bins=Array(20).fill(0);S.R.forEach(x=>bins[Math.min(19,Math.floor((x.s+130)/(230/20)<0?0:(x.s+130)/(230/20)))]++);const bm=Math.max(...bins);
+ let tip="";const top=sens[0];tip=`Sabse bada asar <b>${top.n}</b> ka hai. `+(top.d>0?"Ise badhane par result behtar hota hai.":"Ise kam karne par result behtar hota hai.");
+ if(S.risk>=15)tip+=" Risk high hai, isliye us factor ko thoda adjust karke dobara simulate karo.";
+ last={p:p.slice(),ben:S.ben,risk:S.risk,v:verdict[0],t:cur};
+ $("out").innerHTML=`<h2>Result <span class="v" style="background:${verdict[1]}">${verdict[0]}</span></h2>
+ <div class="tri"><div><span class="mu">Worst case</span><b>${S.worst.b.toFixed(0)} / ${S.worst.r.toFixed(0)}</b></div><div><span class="mu">Most likely</span><b>${S.likely.b.toFixed(0)} / ${S.likely.r.toFixed(0)}</b></div><div><span class="mu">Best case</span><b>${S.best.b.toFixed(0)} / ${S.best.r.toFixed(0)}</b></div></div>
+ <div class="mu" style="margin:4px 0 10px">Format: ${m.u[0]} / ${m.u[1]} (0-100)</div>
+ <div class="row"><span>${m.u[0]}</span><div class="bar" style="width:${S.ben}%;background:var(--ok)"></div><b>${S.ben.toFixed(0)}</b></div>
+ <div class="row"><span>${m.u[1]}</span><div class="bar" style="width:${S.risk}%;background:var(--bd)"></div><b>${S.risk.toFixed(0)}</b></div>
+ <h2 style="margin-top:12px">Kyun? (Explainable factors)</h2>${sens.map(s=>`<div class="row"><span>${s.n}</span><div class="bar" style="width:${Math.abs(s.d)/mx*60+2}%;background:${s.d>0?"var(--ok)":"var(--bd)"}"></div><span class="mu">${s.d>0?"+":"−"}${Math.abs(s.d).toFixed(0)}</span></div>`).join("")}
+ <h2 style="margin-top:12px">Outcome spread (500 virtual runs)</h2><div class="hist">${bins.map(b=>`<i style="height:${b/bm*100}%"></i>`).join("")}</div>
+ <div style="margin-top:10px;font-size:13px">💡 ${tip}</div>`}
+function save(){if(!last)run();hist.push({...last,id:hist.length+1,name:D[last.t].n});renderH()}
+function renderH(){$("hist").innerHTML=`<table><tr><th>#</th><th>Field</th><th>Inputs</th><th>Benefit</th><th>Risk</th><th>Verdict</th></tr>${hist.map(h=>{const best=hist.filter(x=>x.t==h.t).sort((a,b)=>sc(b.ben,b.risk)-sc(a.ben,a.risk))[0]===h;
+ return`<tr><td>v${h.id}</td><td>${h.name}</td><td>${h.p.join(" / ")}</td><td>${h.ben.toFixed(0)}</td><td>${h.risk.toFixed(0)}</td><td>${h.v}${best&&hist.filter(x=>x.t==h.t).length>1?" ⭐ best":""}</td></tr>`}).join("")}</table>`}
+sel("med");
+</script></body></html>
